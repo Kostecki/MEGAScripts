@@ -1,6 +1,9 @@
 import os
 import json
-from urllib import request, parse
+import urllib.request
+
+#API URL
+apiUrl = "https://putsreq.com/13pmCr7IuFD50z8RzzOz"
 
 #Define final object
 setStatusData = {}
@@ -24,13 +27,15 @@ downloadAvgSpeed = float(downloadAmount) / float(uptime)
 uploadAvgSpeed = float(uploadAmount) / float(uptime)
 
 #Update final objects with data
-setStatusData['dataAmount']['down'] = downloadAmount
-setStatusData['dataAmount']['up'] = uploadAmount
-setStatusData['avgSpeed']['down'] = downloadAvgSpeed
-setStatusData['avgSpeed']['up'] = uploadAvgSpeed
+setStatusData['dataAmount']['down'] = round(downloadAmount, 3)
+setStatusData['dataAmount']['up'] = round(uploadAmount, 3)
+setStatusData['avgSpeed']['down'] = round(downloadAvgSpeed, 3)
+setStatusData['avgSpeed']['up'] = round(uploadAvgSpeed, 3)
 
 #Post to API
-payload = parse.urlencode(setStatusData).encode()
-req = request.Request('https://putsreq.com/13pmCr7IuFD50z8RzzOz', data=payload) # this will make the method "POST"
-response = request.urlopen(req)
-print(response)
+req = urllib.request.Request(api)
+req.add_header('Content-Type', 'application/json; charset=utf-8')
+jsondata = json.dumps(setStatusData)
+jsondataasbytes = jsondata.encode('utf-8')
+req.add_header('Content-Length', len(jsondataasbytes))
+response = urllib.request.urlopen(req, jsondataasbytes)
