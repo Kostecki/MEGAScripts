@@ -11,10 +11,9 @@
 #define MILLI_AMPS 8000
 
 //Defaults
-int BRIGHTNESS;
+float BRIGHTNESS;
 int* COLOR;
 String ANIMATION;
-static uint8_t startIndex = 1; /* motion speed */
 
 //LED Setup
 #define LED_TYPE WS2813
@@ -32,16 +31,14 @@ const int mqttPort = 1883; //8883 for TLS
 const char* mqttUser = "rynflejx:rynflejx";
 const char* mqttTopic = "boominator";
 
-//Something, something palettes
-CRGBPalette16 currentPalette;
-TBlendType    currentBlending;
-
 CRGB leds[NUM_LEDS_PER_STRIP];
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
 void setup() {
+  delay(3000);
+  
   //Setup EEPROM
   EEPROM.begin(512);
 
@@ -55,7 +52,7 @@ void setup() {
   WiFi.begin(ssid, wifiPassword);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.println("Connecting to WiFi..");
+    Serial.println("Connecting to WiFi...");
   }
 
   //Setup and Connect to MQTT Broker
@@ -86,11 +83,7 @@ void setup() {
 void loop() {
   client.loop();
 
-  static uint8_t startIndex = 0;
-  startIndex = startIndex + 1; /* motion speed */
-
   FastLED.show();
-  /* FastLED.delay(1000 / UPDATES_PER_SECOND); */
 }
 
 //Handle MQTT response
@@ -100,12 +93,12 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   for (int i = 0; i < length; i++) {
     payloadString += (char)payload[i];
   }
-
   mqttToJson(payloadString);
 }
 
 //Manipulate JSON String and get values
 void mqttToJson (String receivedJSON) {
+  Serial.println(receivedJSON);
   String json = receivedJSON;
   StaticJsonBuffer<200> jsonBuffer;
   JsonObject& jsonResult = jsonBuffer.parseObject(json);
@@ -114,8 +107,8 @@ void mqttToJson (String receivedJSON) {
   String animationJSON = jsonResult["Animation"];
 
   //Get brightness and convert from 0-100 to 0-255 to fit FastLED
-  float brightnessJSON = jsonResult["Brightness"]; //(X*255)/100 0-100 -> 0-255
-  brightnessJSON = (brightnessJSON * 255)/100;
+  float brightnessJSON = jsonResult["Brightness"];
+  brightnessJSON = (brightnessJSON * 255);
 
   //Get individual R, G, B and A values
   int rJSON = jsonResult["Color"]["R"];
@@ -131,57 +124,20 @@ void mqttToJson (String receivedJSON) {
   updateStrip();
 }
 
-void FillLEDsFromPaletteColors( uint8_t colorIndex)
-{   
-    for( int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
-        leds[i] = ColorFromPalette( currentPalette, colorIndex, BRIGHTNESS, currentBlending);
-        colorIndex += 3;
-    }
-}
-
 void updateStrip () {
   FastLED.setBrightness(BRIGHTNESS);
   
-  if (ANIMATION == NULL) {
+  if (ANIMATION != "") {
     Serial.println("Solid Color");
-    fill_solid(currentPalette, NUM_LEDS_PER_STRIP, CRGB(COLOR[0], COLOR[1], COLOR[2]));
+    fill_solid(leds, NUM_LEDS_PER_STRIP, CRGB(COLOR[0], COLOR[1], COLOR[2]));
   } else {
     Serial.println("Animation");
-    FillLEDsFromPaletteColors(startIndex);
   }
 }
 
-
-//These are animations
-void SetupTotallyRandomPalette()
-{
-    for( int i = 0; i < 16; i++) {
-        currentPalette[i] = CHSV( random8(), 255, random8());
-    }
-}
-
-void SingleColorBreath() {
-  int fadeAmount = 5;
-  int breathBrightness = 0;
-  int fadeSpeed = 9;
-  
-  /* while(true) { */
-    for (int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
-      leds[i].setRGB(COLOR[0], COLOR[1], COLOR[2]);
-      leds[i].fadeLightBy(breathBrightness);
-    }
-    FastLED.show();
-    breathBrightness = breathBrightness + fadeAmount;
-
-    if (breathBrightness == 0 || breathBrightness == 255) {
-      fadeAmount = -fadeAmount;
-    }
-    delay(fadeSpeed);
-/*   } */
-}
-
 void SingleColorTravelingDot() {
-  int travelSpeed = 30;
+  Serial.println("SingleColorTravelingDot");
+  int travelSpeed = 50; //Higher is slower
   for(int i = 0; i < NUM_LEDS_PER_STRIP; i++) { 
     leds[i].setRGB(COLOR[0], COLOR[1], COLOR[2]);
     FastLED.show();
@@ -189,32 +145,4 @@ void SingleColorTravelingDot() {
     leds[i] = CRGB::Black;
     delay(travelSpeed);
   }
-}
-
-void SetupRainbowColorsPalette() {
-  currentPalette = RainbowColors_p;
-}
-
-void SetupRainbowStripeColorsPalette() {
-  currentPalette = RainbowStripeColors_p;
-}
-
-void SetupOceanColorsPalette() {
-  currentPalette = OceanColors_p;
-}
-
-void SetupCloudColorsPalette() {
-  currentPalette = CloudColors_p;
-}
-
-void SetupLavaColorsPalette() {
-  currentPalette = LavaColors_p;
-}
-
-void SetupForestColorsPalette() {
-  currentPalette = ForestColors_p;
-}
-
-void SetupPartyColorsPalette() {
-  currentPalette = PartyColors_p;
 }
