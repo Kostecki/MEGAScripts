@@ -14,6 +14,7 @@
 int BRIGHTNESS;
 int* COLOR;
 String ANIMATION;
+static uint8_t startIndex = 1; /* motion speed */
 
 //LED Setup
 #define LED_TYPE WS2813
@@ -34,8 +35,6 @@ const char* mqttTopic = "boominator";
 //Something, something palettes
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
-currentPalette = RainbowColors_p;
-currentBlending = LINEARBLEND;
 
 CRGB leds[NUM_LEDS_PER_STRIP];
 
@@ -74,13 +73,6 @@ void setup() {
   }
   client.subscribe(mqttTopic);
 
-  //Get default values
-  if (!DEFAULTS_SET) {
-    //DO SOME GET STUFF AND WRITE TO EEPROM
-  } else {
-    //READ FROM EEPROM
-  }
-
   //Initialize LED Strips
   FastLED.addLeds<LED_TYPE, D5, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP);
   FastLED.addLeds<LED_TYPE, D6, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP);
@@ -98,7 +90,7 @@ void loop() {
   startIndex = startIndex + 1; /* motion speed */
 
   FastLED.show();
-  FastLED.delay(1000 / UPDATES_PER_SECOND);
+  /* FastLED.delay(1000 / UPDATES_PER_SECOND); */
 }
 
 //Handle MQTT response
@@ -141,7 +133,7 @@ void mqttToJson (String receivedJSON) {
 
 void FillLEDsFromPaletteColors( uint8_t colorIndex)
 {   
-    for( int i = 0; i < NUM_LEDS; i++) {
+    for( int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
         leds[i] = ColorFromPalette( currentPalette, colorIndex, BRIGHTNESS, currentBlending);
         colorIndex += 3;
     }
@@ -150,19 +142,53 @@ void FillLEDsFromPaletteColors( uint8_t colorIndex)
 void updateStrip () {
   FastLED.setBrightness(BRIGHTNESS);
   
-  if (ANIMATION != NULL) {
-    fill_solid(currentPalette, NUM_LEDS_PER_STRIP, CRGB(COLOR[0], COLOR[1], COLOR[2]))
+  if (ANIMATION == NULL) {
+    Serial.println("Solid Color");
+    fill_solid(currentPalette, NUM_LEDS_PER_STRIP, CRGB(COLOR[0], COLOR[1], COLOR[2]));
   } else {
-    Serial.println("Animation. Do things!");
+    Serial.println("Animation");
     FillLEDsFromPaletteColors(startIndex);
   }
 }
 
+
+//These are animations
 void SetupTotallyRandomPalette()
 {
     for( int i = 0; i < 16; i++) {
         currentPalette[i] = CHSV( random8(), 255, random8());
     }
+}
+
+void SingleColorBreath() {
+  int fadeAmount = 5;
+  int breathBrightness = 0;
+  int fadeSpeed = 9;
+  
+  /* while(true) { */
+    for (int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
+      leds[i].setRGB(COLOR[0], COLOR[1], COLOR[2]);
+      leds[i].fadeLightBy(breathBrightness);
+    }
+    FastLED.show();
+    breathBrightness = breathBrightness + fadeAmount;
+
+    if (breathBrightness == 0 || breathBrightness == 255) {
+      fadeAmount = -fadeAmount;
+    }
+    delay(fadeSpeed);
+/*   } */
+}
+
+void SingleColorTravelingDot() {
+  int travelSpeed = 30;
+  for(int i = 0; i < NUM_LEDS_PER_STRIP; i++) { 
+    leds[i].setRGB(COLOR[0], COLOR[1], COLOR[2]);
+    FastLED.show();
+    // clear this led for the next time around the loop
+    leds[i] = CRGB::Black;
+    delay(travelSpeed);
+  }
 }
 
 void SetupRainbowColorsPalette() {
