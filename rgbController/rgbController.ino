@@ -7,11 +7,10 @@
 #include "config.h"
 
 //General Setup 
-//Apparently this is important. 5V Step down is 10A. We'll round down to 8A
+//Apparently this is important. Our 5V step down is 10A. We'll round down to 8A ¯\_(ツ)_/¯
 #define MILLI_AMPS 8000
 
 //Defaults
-#define DEFAULTS_SET false
 int BRIGHTNESS;
 int* COLOR;
 String ANIMATION;
@@ -31,6 +30,12 @@ const char* mqttServer = "puma.rmq.cloudamqp.com";
 const int mqttPort = 1883; //8883 for TLS
 const char* mqttUser = "rynflejx:rynflejx";
 const char* mqttTopic = "boominator";
+
+//Something, something palettes
+CRGBPalette16 currentPalette;
+TBlendType    currentBlending;
+currentPalette = RainbowColors_p;
+currentBlending = LINEARBLEND;
 
 CRGB leds[NUM_LEDS_PER_STRIP];
 
@@ -84,24 +89,26 @@ void setup() {
   //FastLED.setDither(false); //you may see the dithered pixel output as flickering, and you may want to turn it off if the effect is distracting. It's not magic; it's up to you what looks good in your projects.﻿
   FastLED.setCorrection(Typical8mmPixel);
   FastLED.setMaxPowerInVoltsAndMilliamps(5, MILLI_AMPS);
-
-  //Setup LEDs on power-on
-  FastLED.setBrightness(BRIGHTNESS);
-  if (ANIMATION) {
-    //Set animation if animation is enabled
-    //setAnimation();
-  } else {
-  }
-  FastLED.show();
 }
 
+void loop() {
+  client.loop();
+
+  static uint8_t startIndex = 0;
+  startIndex = startIndex + 1; /* motion speed */
+
+  FastLED.show();
+  FastLED.delay(1000 / UPDATES_PER_SECOND);
+}
+
+//Handle MQTT response
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   //Svar tilbage med POST (hele JSON-objekt som kom fra MQTT)
   String payloadString;
   for (int i = 0; i < length; i++) {
     payloadString += (char)payload[i];
   }
-  Serial.println(payloadString);
+
   mqttToJson(payloadString);
 }
 
@@ -132,20 +139,56 @@ void mqttToJson (String receivedJSON) {
   updateStrip();
 }
 
+void FillLEDsFromPaletteColors( uint8_t colorIndex)
+{   
+    for( int i = 0; i < NUM_LEDS; i++) {
+        leds[i] = ColorFromPalette( currentPalette, colorIndex, BRIGHTNESS, currentBlending);
+        colorIndex += 3;
+    }
+}
+
 void updateStrip () {
-  FastLED.setBrightness(255);
+  FastLED.setBrightness(BRIGHTNESS);
   
   if (ANIMATION != NULL) {
-    for (int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
-      leds[i].setRGB(COLOR[0], COLOR[1], COLOR[2]); FastLED.delay(33); leds[i] = CRGB::Black;
-    }
+    fill_solid(currentPalette, NUM_LEDS_PER_STRIP, CRGB(COLOR[0], COLOR[1], COLOR[2]))
   } else {
     Serial.println("Animation. Do things!");
+    FillLEDsFromPaletteColors(startIndex);
   }
-  FastLED.show();
 }
 
-void loop() {
-  client.loop();
+void SetupTotallyRandomPalette()
+{
+    for( int i = 0; i < 16; i++) {
+        currentPalette[i] = CHSV( random8(), 255, random8());
+    }
 }
 
+void SetupRainbowColorsPalette() {
+  currentPalette = RainbowColors_p;
+}
+
+void SetupRainbowStripeColorsPalette() {
+  currentPalette = RainbowStripeColors_p;
+}
+
+void SetupOceanColorsPalette() {
+  currentPalette = OceanColors_p;
+}
+
+void SetupCloudColorsPalette() {
+  currentPalette = CloudColors_p;
+}
+
+void SetupLavaColorsPalette() {
+  currentPalette = LavaColors_p;
+}
+
+void SetupForestColorsPalette() {
+  currentPalette = ForestColors_p;
+}
+
+void SetupPartyColorsPalette() {
+  currentPalette = PartyColors_p;
+}
