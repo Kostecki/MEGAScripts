@@ -122,11 +122,7 @@ void mqttToJson (String receivedJSON) {
   int rJSON = jsonResult["Color"]["R"];
   int gJSON = jsonResult["Color"]["G"];
   int bJSON = jsonResult["Color"]["B"];
-  int aJSON = jsonResult["Color"]["A"];
   int rgbJSON[] = {rJSON, gJSON, bJSON};
-
-  //Combine R, G, B and A into single RGBA-string
-  //String rgbaJSON = rJSON + ", " + gJSON + ", " + bJSON + ", " + aJSON;
 
   //Set global strip-variables (and save to EEPROM)
   ANIMATION = animationJSON;
