@@ -33,7 +33,7 @@ setStatusData['avgSpeed']['down'] = round(downloadAvgSpeed, 3)
 setStatusData['avgSpeed']['up'] = round(uploadAvgSpeed, 3)
 
 #Post to API
-req = urllib.request.Request(api)
+req = urllib.request.Request(apiUrl)
 req.add_header('Content-Type', 'application/json; charset=utf-8')
 jsondata = json.dumps(setStatusData)
 jsondataasbytes = jsondata.encode('utf-8')
