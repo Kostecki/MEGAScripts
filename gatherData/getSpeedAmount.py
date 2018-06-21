@@ -1,6 +1,7 @@
 import os
 import json
 import urllib.request
+import base64
 
 #API URL
 apiUrl = "https://putsreq.com/13pmCr7IuFD50z8RzzOz"
@@ -33,9 +34,14 @@ setStatusData['avgSpeed']['down'] = round(downloadAvgSpeed, 3)
 setStatusData['avgSpeed']['up'] = round(uploadAvgSpeed, 3)
 
 #Post to API
+auth = '%s:%s' % ('', '') #I'm lazy. Just set login here. User/pass
+base64string = base64.standard_b64encode(auth.encode('utf-8'))
+
 req = urllib.request.Request(apiUrl)
 req.add_header('Content-Type', 'application/json; charset=utf-8')
+
 jsondata = json.dumps(setStatusData)
 jsondataasbytes = jsondata.encode('utf-8')
 req.add_header('Content-Length', len(jsondataasbytes))
+req.add_header('Authorization', 'Basic %s' % base64string)
 response = urllib.request.urlopen(req, jsondataasbytes)
