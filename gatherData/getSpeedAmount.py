@@ -15,7 +15,7 @@ setStatusData['dataAmount'] = {}
 uptime = os.popen("awk '{print $1}' /proc/uptime").readline()
 
 #Get data from vnStat
-os.system('vnstat -i ppp0 --json > /tmp/vnStatData.json')
+os.system('vnstat -i eth0 --json > /tmp/vnStatData.json')
 with open("/tmp/vnStatData.json", "r") as f:
   data = json.load(f)
 
