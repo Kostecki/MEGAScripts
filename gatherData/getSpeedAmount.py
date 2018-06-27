@@ -4,12 +4,12 @@ import urllib.request
 import base64
 
 #API URL
-apiUrl = "https://putsreq.com/13pmCr7IuFD50z8RzzOz"
+apiUrl = "https://api.mega.re/setstatus"
 
 #Define final object
 setStatusData = {}
-setStatusData['avgSpeed'] = {}
-setStatusData['dataAmount'] = {}
+setStatusData['AvgSpeed'] = {}
+setStatusData['DataAmount'] = {}
 
 #Get uptime
 uptime = os.popen("awk '{print $1}' /proc/uptime").readline()
@@ -28,10 +28,10 @@ downloadAvgSpeed = float(downloadAmount) / float(uptime)
 uploadAvgSpeed = float(uploadAmount) / float(uptime)
 
 #Update final objects with data
-setStatusData['dataAmount']['down'] = round(downloadAmount, 3)
-setStatusData['dataAmount']['up'] = round(uploadAmount, 3)
-setStatusData['avgSpeed']['down'] = round(downloadAvgSpeed, 3)
-setStatusData['avgSpeed']['up'] = round(uploadAvgSpeed, 3)
+setStatusData['DataAmount']['Down'] = round(downloadAmount, 3)
+setStatusData['DataAmount']['Up'] = round(uploadAmount, 3)
+setStatusData['AvgSpeed']['Down'] = round(downloadAvgSpeed, 3)
+setStatusData['AvgSpeed']['Up'] = round(uploadAvgSpeed, 3)
 
 #Post to API
 auth = '%s:%s' % ('', '') #I'm lazy. Just set login here. User/pass
