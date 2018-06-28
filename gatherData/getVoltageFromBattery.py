@@ -11,7 +11,7 @@ apiUrl = "https://api.mega.re/setvoltage"
 #Define final object
 Voltage = {}
 
-#Get data from pi-voltmeter
+#Get data from aruino-voltmeter
 readings = []
 ser = serial.Serial('/dev/ttyUSB0',9600)
 
