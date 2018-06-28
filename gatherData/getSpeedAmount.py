@@ -34,7 +34,7 @@ setStatusData['AvgSpeed']['Down'] = round(downloadAvgSpeed, 3)
 setStatusData['AvgSpeed']['Up'] = round(uploadAvgSpeed, 3)
 
 #Post to API
-auth = '%s:%s' % ('', '') #I'm lazy. Just set login here. User/pass
+auth = '%s:%s' % (os.environ['API_USER'], os.environ['API_PASSWORD'])
 base64string = base64.standard_b64encode(auth.encode('utf-8'))
 
 req = urllib.request.Request(apiUrl)
@@ -42,5 +42,5 @@ jsondata = json.dumps(setStatusData)
 jsondataasbytes = jsondata.encode('utf-8')
 req.add_header('Content-Type', 'application/json; charset=utf-8')
 req.add_header('Content-Length', len(jsondataasbytes))
-req.add_header('Authorization', 'Basic %s' % base64string)
+req.add_header('Authorization', 'Basic %s' % base64string.decode('utf-8'))
 response = urllib.request.urlopen(req, jsondataasbytes)
