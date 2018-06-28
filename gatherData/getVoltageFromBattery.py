@@ -19,7 +19,9 @@ for i in range(0, 600): #600 is about 5 minutes
   readings.append(ser.readline().rstrip())
 ser.close()
 
-Voltage = str(readings[len(readings)//2])
+readingsSorted = sorted(readings)
+Voltage = str(readingsSorted[len(readings)//2])
+print(Voltage)
 
 #Post to API
 auth = '%s:%s' % (os.environ['API_USER'], os.environ['API_PASSWORD'])
