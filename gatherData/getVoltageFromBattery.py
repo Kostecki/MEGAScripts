@@ -20,7 +20,8 @@ for i in range(0, 600): #600 is about 5 minutes
 ser.close()
 
 readingsSorted = sorted(readings)
-Voltage = str(readingsSorted[len(readings)//2])
+Voltage['Voltage'] = readingsSorted[len(readings)//2].decode('utf-8')
+
 print(Voltage)
 
 #Post to API
