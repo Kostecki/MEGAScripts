@@ -1,5 +1,5 @@
-#include <EEPROM.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
 #include <PubSubClient.h>
 #include <FastLED.h>
 #include <ArduinoJson.h>
@@ -17,7 +17,7 @@ String ANIMATION;
 
 //LED Setup
 #define LED_TYPE WS2813
-#define NUM_LEDS_PER_STRIP 38
+#define NUM_LEDS_PER_STRIP 4 //38
 #define COLOR_ORDER GRB
 #define FRAMES_PER_SECOND 240
 
@@ -39,9 +39,6 @@ PubSubClient client(espClient);
 void setup() {
   delay(3000);
   
-  //Setup EEPROM
-  EEPROM.begin(512);
-
   //Enable serial output.. i guess?
   Serial.begin(115200);
   delay(100);
@@ -78,6 +75,38 @@ void setup() {
   //FastLED.setDither(false); //you may see the dithered pixel output as flickering, and you may want to turn it off if the effect is distracting. It's not magic; it's up to you what looks good in your projects.﻿
   FastLED.setCorrection(Typical8mmPixel);
   FastLED.setMaxPowerInVoltsAndMilliamps(5, MILLI_AMPS);
+
+  //Fetch ligts from API
+  HTTPClient http;
+  http.begin("https://api.mega.re/getlit");
+
+  int httpCode = http.GET();
+
+  String json = http.getString();
+  StaticJsonBuffer<200> jsonBuffer;
+  JsonObject& jsonResult = jsonBuffer.parseObject(json);
+
+  //Get animation stirng
+  String animationJSON = jsonResult["Animation"];
+
+  //Get brightness and convert from 0-100 to 0-255 to fit FastLED
+  float brightnessJSON = jsonResult["Brightness"];
+  brightnessJSON = (brightnessJSON * 255);
+
+  //Get individual R, G, B and A values
+  int rJSON = jsonResult["Color"]["R"];
+  int gJSON = jsonResult["Color"]["G"];
+  int bJSON = jsonResult["Color"]["B"];
+  int rgbJSON[] = {rJSON, gJSON, bJSON};
+
+  //Set global strip-variables
+  ANIMATION = animationJSON;
+  BRIGHTNESS = brightnessJSON;
+  COLOR = rgbJSON;
+
+  updateStrip();
+
+  http.end();
 }
 
 void loop() {
@@ -116,7 +145,7 @@ void mqttToJson (String receivedJSON) {
   int bJSON = jsonResult["Color"]["B"];
   int rgbJSON[] = {rJSON, gJSON, bJSON};
 
-  //Set global strip-variables (and save to EEPROM)
+  //Set global strip-variables
   ANIMATION = animationJSON;
   BRIGHTNESS = brightnessJSON;
   COLOR = rgbJSON;
@@ -132,17 +161,5 @@ void updateStrip () {
     fill_solid(leds, NUM_LEDS_PER_STRIP, CRGB(COLOR[0], COLOR[1], COLOR[2]));
   } else {
     Serial.println("Animation");
-  }
-}
-
-void SingleColorTravelingDot() {
-  Serial.println("SingleColorTravelingDot");
-  int travelSpeed = 50; //Higher is slower
-  for(int i = 0; i < NUM_LEDS_PER_STRIP; i++) { 
-    leds[i].setRGB(COLOR[0], COLOR[1], COLOR[2]);
-    FastLED.show();
-    // clear this led for the next time around the loop
-    leds[i] = CRGB::Black;
-    delay(travelSpeed);
   }
 }
