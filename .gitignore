@@ -1,8 +1,5 @@
 config.h
 
-
-# Created by https://www.gitignore.io/api/macos,visualstudiocode
-
 ### macOS ###
 # General
 .DS_Store
