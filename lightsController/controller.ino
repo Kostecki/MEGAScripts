@@ -1,16 +1,6 @@
 /*
-  SAMPLE PAYLOAD:
-  {
-    "brightness": 120,
-    "color": {
-      "r": 255,
-      "g": 100,
-      "b": 100
-    },
-    "flash": 2,
-    "transition": 5,
-    "state": "ON"
-  }
+  This script is heavily inspired by https://github.com/bruhautomation/ESP-MQTT-JSON-Digital-LEDs
+  And by inspired i mean it's probably 95% his work with slight modifications to fit our needs.
 */
 
 #include <ArduinoJson.h> //Note that 5.13.2 is the last working version. 6.0.0-beta introduces breaking changes.
@@ -20,6 +10,9 @@
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
+
+//Environment
+const int env = 0; //0 = development, 1 = production
 
 //Config
 #include "config.h"
@@ -36,8 +29,12 @@ const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 #define MQTT_MAX_PACKET_SIZE 512
 
 //FastLED Defintions
-// #define NUM_LEDS_PER_STRIP 4 //4 for test
-#define NUM_LEDS_PER_STRIP 38 //38 for boominator
+#if env == 0
+    #define NUM_LEDS_PER_STRIP 4 //Development
+#else
+    #define NUM_LEDS_PER_STRIP 38 //Production
+#endif
+
 #define CHIPSET WS2813
 #define COLOR_ORDER GRB
 
@@ -51,7 +48,7 @@ byte blue = 255;
 byte brightness = 255;
 
 //GLOBALS for fade/flash
-bool stateOn = true; //should be false for prod.
+bool stateOn = true; //If true, can never be turned off in software
 bool startFade = false;
 bool onbeforeflash = false;
 unsigned long lastLoop = 0;
@@ -143,6 +140,7 @@ struct CRGB leds[NUM_LEDS_PER_STRIP];
 void setup()
 {
   Serial.begin(115200);
+
   FastLED.addLeds<CHIPSET, D5, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP);
   FastLED.addLeds<CHIPSET, D6, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP);
   FastLED.addLeds<CHIPSET, D7, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP);
@@ -187,9 +185,15 @@ void setup()
   });
   ArduinoOTA.begin();
 
+  Serial.println();
+  Serial.print("Env: ");
+  Serial.print(env);
+  Serial.println();
+  Serial.print("Number of leds/strip: ");
+  Serial.print(NUM_LEDS_PER_STRIP);
+  Serial.println();
   Serial.println("Ready");
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
+  Serial.println();
 }
 
 //START SETUP WIFI
@@ -211,10 +215,12 @@ void setup_wifi()
     Serial.print(".");
   }
 
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
+  Serial.println();
+  Serial.print("Connected to SSID: ");
+  Serial.print(WiFi.SSID());
+  Serial.println();
+  Serial.print("IP address: ");
+  Serial.print(WiFi.localIP());
 }
 
 //START CALLBACK
