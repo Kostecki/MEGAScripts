@@ -10,6 +10,7 @@
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
+#include <ESP8266httpUpdate.h>
 
 //Environment
 const int env = 0; //0 = development, 1 = production
@@ -138,7 +139,7 @@ struct CRGB leds[NUM_LEDS_PER_STRIP];
 
 //START SETUP
 void setup()
-{
+{  
   Serial.begin(115200);
 
   FastLED.addLeds<CHIPSET, D5, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP);
