@@ -54,6 +54,7 @@ bool startFade = false;
 bool onbeforeflash = false;
 unsigned long lastLoop = 0;
 int transitionTime = 0; //Magic value. Who knows what unit..
+int speed = 0;
 bool inFade = false;
 int loopCount = 0;
 int stepR, stepG, stepB;
@@ -331,6 +332,11 @@ bool processJson(char *message)
     {
       transitionTime = root["Transition"];
     }
+
+    if (root.containsKey("Speed"))
+    {
+      speed = root["Speed"];
+    }
     else if (effectString == "solid")
     {
       transitionTime = 0;
@@ -376,6 +382,11 @@ bool processJson(char *message)
     if (root.containsKey("Transition"))
     {
       transitionTime = root["Transition"];
+    }
+
+    if (root.containsKey("Speed"))
+    {
+      speed = root["Speed"];
     }
     else if (effectString == "solid")
     {
@@ -476,10 +487,12 @@ void loop()
     { //9948
       leds[i] = ColorFromPalette(palette, gHue + (i * 2), beat - gHue + (i * 10));
     }
+
     if (transitionTime == 0 or transitionTime == NULL)
     {
       transitionTime = 30;
     }
+  
     showleds();
   }
 
@@ -647,10 +660,12 @@ void loop()
     int thathue = (thishuepolice + 160) % 255;
     leds[idexR] = CHSV(thishuepolice, thissat, 255);
     leds[idexB] = CHSV(thathue, thissat, 255);
+
     if (transitionTime == 0 or transitionTime == NULL)
     {
       transitionTime = 30;
     }
+
     showleds();
   }
 
@@ -1077,10 +1092,10 @@ void showleds()
   {
     FastLED.setBrightness(brightness); //EXECUTE EFFECT COLOR
     FastLED.show();
-    if (transitionTime > 0 && transitionTime < 130)
-    { //Sets animation speed based on receieved value
-      FastLED.delay(1000 / transitionTime);
-      //delay(10*transitionTime);
+    
+    if (speed > 0 && speed < 200)
+    { 
+      FastLED.delay(1000 / speed);
     }
   }
   else if (startFade)
