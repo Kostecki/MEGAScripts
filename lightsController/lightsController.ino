@@ -461,6 +461,7 @@ void loop()
   
   ArduinoOTA.handle();
 
+  postFWVersion(): //Post current firmware version back to API
   checkForUpdates(); //Check if there's new firmware
 
   //EFFECT BPM
@@ -1089,6 +1090,17 @@ void showleds()
     setColor(0, 0, 0);
     startFade = false;
   }
+}
+
+void postFWVersion() {
+  Serial.println(FW_VERSION);
+  
+  // HTTPClient httpClient;
+  // httpClient.begin(""); //Post URL
+  // httpClient.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  // httpClient.POST("fw=FW_VERSION");
+  // httpClient.writeToStream(&Serial);
+  // httpClient.end();
 }
 
 void checkForUpdates() {
