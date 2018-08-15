@@ -1,4 +1,5 @@
 config.h
+.vscode
 lightsController/.vscode
 lightsController/build
 
