@@ -1,4 +1,4 @@
-##### Configurations are set in the `config.h` file. An example is provided with the repo.
+##### Configurations are defined in the `config.h` file. An example is provided with the repo.
 
 ```
 //Environment
