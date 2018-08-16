@@ -148,7 +148,15 @@ void setup()
   setupStripedPalette(CRGB::Red, CRGB::Red, CRGB::White, CRGB::White); //for CANDY CANE
   gPal = HeatColors_p;                                                 //for FIRE
 
+  //Print current environment info to serial console
+  printEnv();
+
+  //Being WiFi setup
   setup_wifi();
+
+  //Post current running fimrware version to api
+  postFWVersion(); //Post current firmware version back to API
+  
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
 
@@ -183,26 +191,15 @@ void setup()
       Serial.println("End Failed");
   });
   ArduinoOTA.begin();
-
-  Serial.println();
-  Serial.print("Env: ");
-  Serial.print(env);
-  Serial.println();
-  Serial.print("Number of leds/strip: ");
-  Serial.print(NUM_LEDS_PER_STRIP);
-  Serial.println();
-  Serial.println("Ready");
-  Serial.println();
 }
 
 //START SETUP WIFI
 void setup_wifi()
 {
-
   delay(10);
   //We start by connecting to a WiFi network
   Serial.println();
-  Serial.print("Connecting to ");
+  Serial.print("Connecting to SSID: ");
   Serial.println(ssid);
 
   WiFi.mode(WIFI_STA);
@@ -213,13 +210,13 @@ void setup_wifi()
     delay(500);
     Serial.print(".");
   }
-
+  
   Serial.println();
   Serial.print("Connected to SSID: ");
-  Serial.print(WiFi.SSID());
-  Serial.println();
+  Serial.println(WiFi.SSID());
   Serial.print("IP address: ");
-  Serial.print(WiFi.localIP());
+  Serial.println(WiFi.localIP());
+  Serial.println();
 }
 
 //START CALLBACK
@@ -416,6 +413,8 @@ void reconnect()
       //Wait 5 seconds before retrying
       delay(5000);
     }
+
+    Serial.println();
   }
 }
 
@@ -460,9 +459,9 @@ void loop()
   client.loop();
   
   ArduinoOTA.handle();
-
-  postFWVersion(): //Post current firmware version back to API
-  checkForUpdates(); //Check if there's new firmware
+  
+  //Check if there's new firmware
+  checkForUpdates();
 
   //EFFECT BPM
   if (effectString == "bpm")
@@ -1092,49 +1091,83 @@ void showleds()
   }
 }
 
-void postFWVersion() {
-  Serial.println(FW_VERSION);
+void printEnv() {
+  String envName = "";
+  if (env == 0) {
+    envName = "Development";
+  } else {
+    envName = "Production";
+  }
   
-  // HTTPClient httpClient;
-  // httpClient.begin(""); //Post URL
-  // httpClient.addHeader("Content-Type", "application/x-www-form-urlencoded");
-  // httpClient.POST("fw=FW_VERSION");
-  // httpClient.writeToStream(&Serial);
-  // httpClient.end();
+  Serial.println();
+  Serial.print("Environment: ");
+  Serial.println(envName);
+  Serial.print("Number of leds per strip: ");
+  Serial.println(NUM_LEDS_PER_STRIP);
+  Serial.println("Ready");
+}
+
+void postFWVersion() {
+  String payload = "firmware=";
+  payload.concat(FW_VERSION);
+
+  Serial.println("Sending current FW version to API");
+  
+  HTTPClient httpClient;
+  httpClient.begin(""); //Post URL
+  httpClient.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  httpClient.POST(payload);
+  httpClient.writeToStream(&Serial);
+  httpClient.end();
+  
+  Serial.println();
+}
+
+String macToStr(const uint8_t* mac)
+{
+  String result;
+  for (int i = 0; i < 6; ++i) {
+    result += String(mac[i], 16);
+  }
+  return result;
 }
 
 void checkForUpdates() {
-  String mac = getMAC();
-  String fwURL = String( fwUrlBase ); //url.com/
-  fwURL.concat( mac );                //url.com/mac
+  String clientMac = "";
+  unsigned char mac2[6];
+  WiFi.macAddress(mac2);
+  clientMac += macToStr(mac2);
+  
+  String fwURL = String(fwUrlBase); //url.com/
+  fwURL.concat(clientMac);                //url.com/mac
   String fwVersionURL = fwURL;
-  fwVersionURL.concat( ".version" );  //url.com/mac.version
+  fwVersionURL.concat(".version");  //url.com/mac.version
 
-  Serial.println( "Checking for firmware updates." );
-  Serial.print( "MAC address: " );
-  Serial.println( mac );
-  Serial.print( "Firmware version URL: " );
-  Serial.println( fwVersionURL );
+  Serial.println("Checking for firmware updates.");
+  Serial.print("MAC address: ");
+  Serial.println(clientMac);
+  Serial.print("Firmware version URL: ");
+  Serial.println(fwVersionURL);
 
   HTTPClient httpClient;
-  httpClient.begin( fwVersionURL );
+  httpClient.begin(fwVersionURL);
   int httpCode = httpClient.GET();
-  if( httpCode == 200 ) {
+  if(httpCode == 200) {
     String newFWVersion = httpClient.getString();
 
-    Serial.print( "Current firmware version: " );
-    Serial.println( FW_VERSION );
-    Serial.print( "Available firmware version: " );
-    Serial.println( newFWVersion );
+    Serial.print("Current firmware version: ");
+    Serial.println(FW_VERSION);
+    Serial.print("Available firmware version: ");
+    Serial.println(newFWVersion);
 
     int newVersion = newFWVersion.toInt();
 
-    if( newVersion > FW_VERSION ) {
-      Serial.println( "Preparing to update" );
+    if(newVersion > FW_VERSION) {
+      Serial.println("Preparing to update");
 
       String fwImageURL = fwURL;
-      fwImageURL.concat( ".bin" );
-      t_httpUpdate_return ret = ESPhttpUpdate.update( fwImageURL );
+      fwImageURL.concat(".bin");
+      t_httpUpdate_return ret = ESPhttpUpdate.update(fwImageURL);
 
       switch(ret) {
         case HTTP_UPDATE_FAILED:
@@ -1147,12 +1180,12 @@ void checkForUpdates() {
       }
     }
     else {
-      Serial.println( "Already on latest version" );
+      Serial.println("Already on latest version");
     }
   }
   else {
-    Serial.print( "Firmware version check failed, got HTTP response code " );
-    Serial.println( httpCode );
+    Serial.print("Firmware version check failed, got HTTP response code ");
+    Serial.println(httpCode);
   }
   httpClient.end();
 }
