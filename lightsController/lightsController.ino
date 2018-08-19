@@ -1080,8 +1080,8 @@ void showleds()
   if (stateOn) {
     FastLED.setBrightness(brightness);  //EXECUTE EFFECT COLOR
     FastLED.show();
-    if (transitionTime > 0 && transitionTime < 130) {  //Sets animation speed based on receieved value
-      FastLED.delay(1000 / transitionTime);
+    if (speed > 0 && speed < 200) {  //Sets animation speed based on receieved value
+      FastLED.delay(1000 / speed);
       //delay(10*transitionTime);
     }
   }
