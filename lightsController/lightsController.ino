@@ -2,6 +2,7 @@
   This script is heavily inspired by https://github.com/bruhautomation/ESP-MQTT-JSON-Digital-LEDs
   And by inspired i mean it's probably 95% his work with slight modifications to fit our needs.
 */
+#define FASTLED_INTERNAL
 
 #include <ArduinoJson.h> //Note that 5.13.2 is the last working version. 6.0.0-beta introduces breaking changes.
 #include <ESP8266WiFi.h>
@@ -16,21 +17,21 @@
 #include "config.h"
 
 //MQTT
-const char *on_cmd = "ON";
-const char *off_cmd = "OFF";
-const char *effect = "solid";
+const char* ON_CMD = "ON";
+const char* OFF_CMD = "OFF";
+const char* EFFECT = "solid";
 String effectString = "solid";
 String oldeffectString = "solid";
 
 //FOR JSON
 const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
-#define MQTT_MAX_PACKET_SIZE 512
+#define MQTT_MAX_PACKET_SIZE 512;
 
 //FastLED Defintions
 #if env == 0
-    #define NUM_LEDS_PER_STRIP 4 //Development
+    const int NUM_LEDS_PER_STRIP = 4; //Development
 #else
-    #define NUM_LEDS_PER_STRIP 38 //Production
+    const int NUM_LEDS_PER_STRIP = 38; //Production
 #endif
 
 #define CHIPSET WS2813
@@ -133,6 +134,7 @@ uint8_t gHue = 0;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+
 struct CRGB leds[NUM_LEDS_PER_STRIP];
 
 //START SETUP
@@ -151,22 +153,23 @@ void setup()
   //Print current environment info to serial console
   printEnv();
 
-  //Being WiFi setup
+  //Begin WiFi setup
   setup_wifi();
 
   //Post current running fimrware version to api
-  postFWVersion(); //Post current firmware version back to API
-  
-  client.setServer(mqtt_server, mqtt_port);
+  //postFWVersion(); //Post current firmware version back to API
+
+  client.setServer(MQTT_SERVER, MQTT_PORT);
   client.setCallback(callback);
 
   //OTA SETUP
-  ArduinoOTA.setPort(OTAport);
-  //Hostname defaults to esp8266-[ChipID]
-  ArduinoOTA.setHostname(SENSORNAME);
+  ArduinoOTA.setPort(OTA_PORT);
+  
+  //Hname defaults to esp8266-[ChipID]
+  ArduinoOTA.setHostname(SENSOR_NAME);
 
   //No authentication by default
-  ArduinoOTA.setPassword((const char *)OTApassword);
+  ArduinoOTA.setPassword((const char *)OTA_PASSWORD);
 
   ArduinoOTA.onStart([]() {
     Serial.println("Starting");
@@ -200,10 +203,10 @@ void setup_wifi()
   //We start by connecting to a WiFi network
   Serial.println();
   Serial.print("Connecting to SSID: ");
-  Serial.println(ssid);
+  Serial.println(WIFI_SSID);
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -252,7 +255,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     realBlue = 0;
   }
 
-  Serial.println(effect);
+  Serial.println(EFFECT);
 
   startFade = true;
   inFade = false; //Kill the current fade
@@ -273,11 +276,11 @@ bool processJson(char *message)
 
   if (root.containsKey("state"))
   {
-    if (strcmp(root["state"], on_cmd) == 0)
+    if (strcmp(root["state"], ON_CMD) == 0)
     {
       stateOn = true;
     }
-    else if (strcmp(root["state"], off_cmd) == 0)
+    else if (strcmp(root["state"], OFF_CMD) == 0)
     {
       stateOn = false;
       onbeforeflash = false;
@@ -317,19 +320,14 @@ bool processJson(char *message)
 
     if (root.containsKey("effect"))
     {
-      effect = root["effect"];
-      effectString = effect;
+      EFFECT = root["effect"];
+      effectString = EFFECT;
       twinklecounter = 0; //manage twinklecounter
     }
 
     if (root.containsKey("Transition"))
     {
       transitionTime = root["Transition"];
-    }
-
-    if (root.containsKey("Speed"))
-    {
-      speed = root["Speed"];
     }
     else if (effectString == "solid")
     {
@@ -368,19 +366,14 @@ bool processJson(char *message)
 
     if (root.containsKey("Animation")) //Ost
     {
-      effect = root["Animation"]; //Ost
-      effectString = effect;
+      EFFECT = root["Animation"]; //Ost
+      effectString = EFFECT;
       twinklecounter = 0; //manage twinklecounter
     }
 
     if (root.containsKey("Transition"))
     {
       transitionTime = root["Transition"];
-    }
-
-    if (root.containsKey("Speed"))
-    {
-      speed = root["Speed"];
     }
     else if (effectString == "solid")
     {
@@ -399,10 +392,10 @@ void reconnect()
   {
     Serial.print("Attempting MQTT connection...");
     //Attempt to connect
-    if (client.connect(SENSORNAME, mqtt_username, mqtt_password))
+    if (client.connect(SENSOR_NAME, MQTT_USERNAME, MQTT_PASSWORD))
     {
       Serial.println("connected");
-      client.subscribe(mqtt_in);
+      client.subscribe(MQTT_TOPIC);
       setColor(0, 0, 0);
     }
     else
@@ -461,7 +454,7 @@ void loop()
   ArduinoOTA.handle();
   
   //Check if there's new firmware
-  checkForUpdates();
+  //checkForUpdates();
 
   //EFFECT BPM
   if (effectString == "bpm")
@@ -1074,14 +1067,12 @@ void showleds()
 
   delay(1);
 
-  if (stateOn)
-  {
-    FastLED.setBrightness(brightness); //EXECUTE EFFECT COLOR
+  if (stateOn) {
+    FastLED.setBrightness(brightness);  //EXECUTE EFFECT COLOR
     FastLED.show();
-    
-    if (speed > 0 && speed < 200)
-    { 
-      FastLED.delay(1000 / speed);
+    if (transitionTime > 0 && transitionTime < 130) {  //Sets animation speed based on receieved value
+      FastLED.delay(1000 / transitionTime);
+      //delay(10*transitionTime);
     }
   }
   else if (startFade)
@@ -1092,8 +1083,8 @@ void showleds()
 }
 
 void printEnv() {
-  String envName = "";
-  if (env == 0) {
+  String envName;
+  if (ENV == 0) {
     envName = "Development";
   } else {
     envName = "Production";
@@ -1114,7 +1105,7 @@ void postFWVersion() {
   Serial.println("Sending current FW version to API");
   
   HTTPClient httpClient;
-  httpClient.begin(""); //Post URL
+  httpClient.begin(FW_VERSION_POST_URL); //Post URL
   httpClient.addHeader("Content-Type", "application/x-www-form-urlencoded");
   httpClient.POST(payload);
   httpClient.writeToStream(&Serial);
@@ -1133,12 +1124,12 @@ String macToStr(const uint8_t* mac)
 }
 
 void checkForUpdates() {
-  String clientMac = "";
+  String clientMac;
   unsigned char mac2[6];
   WiFi.macAddress(mac2);
   clientMac += macToStr(mac2);
   
-  String fwURL = String(fwUrlBase); //url.com/
+  String fwURL = String(FW_BASE_URL); //url.com/
   fwURL.concat(clientMac);                //url.com/mac
   String fwVersionURL = fwURL;
   fwVersionURL.concat(".version");  //url.com/mac.version
