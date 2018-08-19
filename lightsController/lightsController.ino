@@ -324,6 +324,11 @@ bool processJson(char *message)
       effectString = EFFECT;
       twinklecounter = 0; //manage twinklecounter
     }
+    
+    if (root.containsKey("Speed"))
+    {
+      speed = root["Speed"];
+    }
 
     if (root.containsKey("Transition"))
     {
@@ -369,6 +374,11 @@ bool processJson(char *message)
       EFFECT = root["Animation"]; //Ost
       effectString = EFFECT;
       twinklecounter = 0; //manage twinklecounter
+    }
+    
+    if (root.containsKey("Speed"))
+    {
+      speed = root["Speed"];
     }
 
     if (root.containsKey("Transition"))
