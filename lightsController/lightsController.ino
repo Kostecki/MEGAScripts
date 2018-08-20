@@ -15,6 +15,7 @@
 
 //Config
 #include "config.h"
+#include "certs.h"
 
 //MQTT
 const char* ON_CMD = "ON";
@@ -157,7 +158,7 @@ void setup()
   setup_wifi();
 
   //Post current running fimrware version to api
-  //postFWVersion(); //Post current firmware version back to API
+  postFWVersion(); //Post current firmware version back to API
 
   client.setServer(MQTT_SERVER, MQTT_PORT);
   client.setCallback(callback);
@@ -1115,7 +1116,7 @@ void postFWVersion() {
   Serial.println("Sending current FW version to API");
   
   HTTPClient httpClient;
-  httpClient.begin(FW_VERSION_POST_URL); //Post URL
+  httpClient.begin(FW_VERSION_POST_URL);
   httpClient.addHeader("Content-Type", "application/x-www-form-urlencoded");
   httpClient.POST(payload);
   httpClient.writeToStream(&Serial);
@@ -1139,10 +1140,10 @@ void checkForUpdates() {
   WiFi.macAddress(mac2);
   clientMac += macToStr(mac2);
   
-  String fwURL = String(FW_BASE_URL); //url.com/
-  fwURL.concat(clientMac);                //url.com/mac
+  String fwURL = String(FW_BASE_URL);
+  fwURL.concat(clientMac);
   String fwVersionURL = fwURL;
-  fwVersionURL.concat(".version");  //url.com/mac.version
+  fwVersionURL.concat(".version");
 
   Serial.println("Checking for firmware updates.");
   Serial.print("MAC address: ");
