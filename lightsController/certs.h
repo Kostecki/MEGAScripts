@@ -56,6 +56,7 @@ void setClock() {
   gmtime_r(&now, &timeinfo);
   Serial.print("Current time: ");
   Serial.print(asctime(&timeinfo));
+  Serial.println();
 }
 
 // Try and connect using a WiFiClientBearSSL to specified host:port and dump URL

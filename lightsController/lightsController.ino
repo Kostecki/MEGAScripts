@@ -143,6 +143,8 @@ void setup()
 {  
   Serial.begin(115200);
 
+  SPIFFS.begin();
+
   FastLED.addLeds<CHIPSET, D5, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP);
   FastLED.addLeds<CHIPSET, D6, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP);
   FastLED.addLeds<CHIPSET, D7, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP);
@@ -156,6 +158,16 @@ void setup()
 
   //Begin WiFi setup
   setup_wifi();
+
+  setClock(); // Required for X.509 validation
+
+  int numCerts = certStore.initCertStore(&certs_idx, &certs_ar);
+  Serial.printf("Number of CA certs read: %d\n", numCerts);
+  if (numCerts == 0) {
+    Serial.printf("No certs found. Did you run certs-from-mozill.py and upload the SPIFFS directory before running?\n");
+    return; // Can't connect to anything w/o certs!
+  }
+  Serial.println();
 
   //Post current running fimrware version to api
   postFWVersion(); //Post current firmware version back to API
@@ -1110,20 +1122,80 @@ void printEnv() {
 }
 
 void postFWVersion() {
+  BearSSL::WiFiClientSecure *bear = new BearSSL::WiFiClientSecure();
+  // Integrate the cert store with this connection
+  bear->setCertStore(&certStore);
+
   String payload = "firmware=";
   payload.concat(FW_VERSION);
 
   Serial.println("Sending current FW version to API");
   
-  HTTPClient httpClient;
-  httpClient.begin(FW_VERSION_POST_URL);
-  httpClient.addHeader("Content-Type", "application/x-www-form-urlencoded");
-  httpClient.POST(payload);
-  httpClient.writeToStream(&Serial);
-  httpClient.end();
+  if (!bear->connect(FW_VERSION_URL, 443)) {
+    Serial.println("connection failed");
+    return;
+  }
+
+  bear->println("POST " + FW_VERSION_DIR + "HTTP/1.1");
+  bear->println("Host: " + FW_VERSION_URL);
+  bear->println("User-Agent: ESP8266");
+  bear->println("Content-Type: application/x-www-form-urlencoded");
+  bear->print("Content-Length: ");
+  bear->println(payload.length());
+  bear->println();
+  bear->print(payload);
+
+  while (bear->connected()) {
+    String line = bear->readStringUntil('\n');
+    if (line == "\r") {
+      break;
+    }
+  }
+  String line = bear->readStringUntil('\n');
+  Serial.println(line);
+
+  bear->stop();
   
   Serial.println();
 }
+
+// void getFWVersion() {
+//   BearSSL::WiFiClientSecure *bear = new BearSSL::WiFiClientSecure();
+//   // Integrate the cert store with this connection
+//   bear->setCertStore(&certStore);
+
+//   Serial.println("Getting current FW version from API");
+
+//   if (!bear->connect(FW_VERSION_URL, 443)) {
+//     Serial.println("connection failed");
+//     return;
+//   }
+
+//   bear->print(String("GET ") + FW_VERSION_DIR + " HTTP/1.1\r\n" +
+//             "Host: " + FW_VERSION_URL + "\r\n" +
+//             "User-Agent: ESP8266\r\n" +
+//             "Connection: close\r\n\r\n");
+
+//   while (bear->connected()) {
+//     String line = bear->readStringUntil('\n');
+//     if (line == "\r") {
+//       break;
+//     }
+//   }
+//   String line = bear->readStringUntil('\n');
+//   Serial.println(line);
+
+//   bear->stop();
+  
+//   Serial.println();
+
+//   StaticJsonBuffer<BUFFER_SIZE> jsonBuffer;
+//   JsonObject& root = jsonBuffer.parseObject(line);
+
+//   String response = root["response"];
+
+//   return response;
+// }
 
 String macToStr(const uint8_t* mac)
 {
