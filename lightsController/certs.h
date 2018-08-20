@@ -42,7 +42,7 @@ SPIFFSCertStoreFile certs_ar("/certs.ar"); // Uploaded by the user
 
 // Set time via NTP, as required for x.509 validation
 void setClock() {
-  configTime(3 * 3600, 0, "pool.ntp.org", "time.nist.gov");
+  configTime(2 * 3600, 0, "pool.ntp.org", "time.nist.gov");
 
   Serial.print("Waiting for NTP time sync: ");
   time_t now = time(nullptr);
