@@ -1,30 +1,28 @@
+import Adafruit_ADS1x15
 import os
-import serial
-import time
 import json
 import urllib.request
 import base64
 
-#API URL
-apiUrl = "https://api.mega.re/setvoltage"
+#Get data from ADC Port 0 (connected to voltage divider)
+adc = Adafruit_ADS1x15.ADS1115()
+GAIN = 2/3
 
-#Define final object
-Voltage = {}
-
-#Get data from aruino-voltmeter
 readings = []
-ser = serial.Serial('/dev/ttyUSB0',9600)
 
-for i in range(0, 600): #600 is about 5 minutes
-  readings.append(ser.readline().rstrip())
-ser.close()
+for _ in range(50): #Get 50 readings from the battery
+  analogIn = adc.read_adc(0, gain=GAIN)
+  voltageOut = (analogIn * 0.0001875)*5
+  readings.append(voltageOut)
 
+#Create JSON Object
+Voltage = {}
 readingsSorted = sorted(readings)
-Voltage['Voltage'] = readingsSorted[len(readings)//2].decode('utf-8')
-
-print(Voltage)
+Voltage['Voltage'] = readingsSorted[len(readings)//2]
 
 #Post to API
+apiUrl = "https://api.mega.re/setvoltage"
+
 auth = '%s:%s' % (os.environ['API_USER'], os.environ['API_PASSWORD'])
 base64string = base64.standard_b64encode(auth.encode('utf-8'))
 
