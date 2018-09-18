@@ -25,8 +25,7 @@ readingsSorted = sorted(readings)
 Voltage['Voltage'] = round(readingsSorted[len(readings)//2], 2)
 
 #Post to API
-#apiUrl = "https://api.mega.re/setvoltage"
-apiUrl = "https://requestbin-kostecki.herokuapp.com/1f0up091"
+apiUrl = "https://api.mega.re/setvoltage"
 
 auth = '%s:%s' % (authData["apiUser"], authData["apiPass"])
 base64string = base64.standard_b64encode(auth.encode('utf-8'))
