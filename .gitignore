@@ -3,6 +3,8 @@ config.h
 lightsController/.vscode
 lightsController/build
 
+auth.json
+
 ### macOS ###
 # General
 .DS_Store
