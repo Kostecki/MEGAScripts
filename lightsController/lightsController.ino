@@ -3,6 +3,7 @@
   And by inspired i mean it's probably 95% his work with slight modifications to fit our needs.
 */
 #define FASTLED_INTERNAL
+#define FASTLED_INTERRUPT_RETRY_COUNT 0
 
 #include <ArduinoJson.h> //Note that 5.13.2 is the last working version. 6.0.0-beta introduces breaking changes.
 #include <ESP8266WiFi.h>
@@ -29,8 +30,8 @@ const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 #define MQTT_MAX_PACKET_SIZE 512;
 
 //FastLED Defintions
-#if env == 0
-    const int NUM_LEDS_PER_STRIP = 4; //Development
+#if ENV == 0 or ENV == 1
+    const int NUM_LEDS_PER_STRIP = 30; //Development
 #else
     const int NUM_LEDS_PER_STRIP = 38; //Production
 #endif
@@ -170,7 +171,7 @@ void setup()
   Serial.println();
 
   //Post current running fimrware version to api
-  postFWVersion(); //Post current firmware version back to API
+  //postFWVersion(); //Post current firmware version back to API OST
 
   client.setServer(MQTT_SERVER, MQTT_PORT);
   client.setCallback(callback);
@@ -226,6 +227,8 @@ void setup_wifi()
     delay(500);
     Serial.print(".");
   }
+
+  WiFi.setSleepMode(WIFI_NONE_SLEEP);
   
   Serial.println();
   Serial.print("Connected to SSID: ");
@@ -382,9 +385,9 @@ bool processJson(char *message)
       brightness = convertedBrightness;
     }
 
-    if (root.containsKey("Animation")) //Ost
+    if (root.containsKey("Animation"))
     {
-      EFFECT = root["Animation"]; //Ost
+      EFFECT = root["Animation"];
       effectString = EFFECT;
       twinklecounter = 0; //manage twinklecounter
     }
@@ -1107,7 +1110,7 @@ void showleds()
 
 void printEnv() {
   String envName;
-  if (ENV == 0) {
+  if (ENV == 0 or ENV == 1) {
     envName = "Development";
   } else {
     envName = "Production";
