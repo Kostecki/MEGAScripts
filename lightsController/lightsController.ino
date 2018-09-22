@@ -346,9 +346,9 @@ bool processJson(char *message)
       speed = root["Speed"];
     }
 
-    if (root.containsKey("Transition"))
+    if (root.containsKey("Speed"))
     {
-      transitionTime = root["Transition"];
+      transitionTime = root["Speed"];
     }
     else if (effectString == "solid")
     {
@@ -397,9 +397,9 @@ bool processJson(char *message)
       speed = root["Speed"];
     }
 
-    if (root.containsKey("Transition"))
+    if (root.containsKey("Speed"))
     {
-      transitionTime = root["Transition"];
+      transitionTime = root["Speed"];
     }
     else if (effectString == "solid")
     {
@@ -509,6 +509,7 @@ void loop()
     fill_palette(leds, NUM_LEDS_PER_STRIP,
                  startIndex, 16, // higher = narrower stripes
                  currentPalettestriped, 255, LINEARBLEND);
+
     if (transitionTime == 0 or transitionTime == NULL)
     {
       transitionTime = 0;
@@ -522,6 +523,7 @@ void loop()
     fadeToBlackBy(leds, NUM_LEDS_PER_STRIP, 25);
     int pos = random16(NUM_LEDS_PER_STRIP);
     leds[pos] += CRGB(realRed + random8(64), realGreen, realBlue);
+
     if (transitionTime == 0 or transitionTime == NULL)
     {
       transitionTime = 30;
@@ -530,7 +532,7 @@ void loop()
   }
 
   //EFFECT CYCLON RAINBOW
-  if (effectString == "cyclonrainb")
+  if (effectString == "cyclonrainbow")
   { //Single Dot Down
     static uint8_t hue = 0;
     //First slide the led in one direction
@@ -582,9 +584,10 @@ void loop()
   if (effectString == "fire")
   {
     Fire2012WithPalette();
+
     if (transitionTime == 0 or transitionTime == NULL)
     {
-      transitionTime = 150;
+      transitionTime = 20;
     }
     showleds();
   }
@@ -596,6 +599,7 @@ void loop()
   {
     fadeToBlackBy(leds, NUM_LEDS_PER_STRIP, 20);
     addGlitterColor(80, realRed, realGreen, realBlue);
+
     if (transitionTime == 0 or transitionTime == NULL)
     {
       transitionTime = 30;
@@ -611,6 +615,7 @@ void loop()
     {
       leds[beatsin16(i + 7, 0, NUM_LEDS_PER_STRIP - 1)] |= CRGB(realRed, realGreen, realBlue);
     }
+
     if (transitionTime == 0 or transitionTime == NULL)
     {
       transitionTime = 130;
@@ -645,6 +650,7 @@ void loop()
       delay(50 + random8(100)); //shorter delay between strokes
     }
     delay(random8(frequency) * 100); //delay between strikes
+
     if (transitionTime == 0 or transitionTime == NULL)
     {
       transitionTime = 0;
@@ -700,6 +706,7 @@ void loop()
         leds[i] = CHSV(0, 0, 0);
       }
     }
+
     if (transitionTime == 0 or transitionTime == NULL)
     {
       transitionTime = 30;
@@ -714,6 +721,7 @@ void loop()
     static uint8_t starthue = 0;
     thishue++;
     fill_rainbow(leds, NUM_LEDS_PER_STRIP, thishue, deltahue);
+
     if (transitionTime == 0 or transitionTime == NULL)
     {
       transitionTime = 130;
@@ -722,12 +730,13 @@ void loop()
   }
 
   //EFFECT RAINBOW WITH GLITTER
-  if (effectString == "rainblitter")
+  if (effectString == "rainbowwithglitter")
   { //FastLED's built-in rainbow generator with Glitter
     static uint8_t starthue = 0;
     thishue++;
     fill_rainbow(leds, NUM_LEDS_PER_STRIP, thishue, deltahue);
     addGlitter(80);
+
     if (transitionTime == 0 or transitionTime == NULL)
     {
       transitionTime = 130;
@@ -741,6 +750,7 @@ void loop()
     fadeToBlackBy(leds, NUM_LEDS_PER_STRIP, 20);
     int pos = beatsin16(13, 0, NUM_LEDS_PER_STRIP - 1);
     leds[pos] += CRGB(realRed, realGreen, realBlue);
+
     if (transitionTime == 0 or transitionTime == NULL)
     {
       transitionTime = 150;
@@ -1096,9 +1106,8 @@ void showleds()
   if (stateOn) {
     FastLED.setBrightness(brightness);  //EXECUTE EFFECT COLOR
     FastLED.show();
-    if (speed > 0 && speed < 200) {  //Sets animation speed based on receieved value
-      FastLED.delay(1000 / speed);
-      //delay(10*transitionTime);
+    if (transitionTime > 0) {  //Sets animation speed based on receieved value
+      FastLED.delay(1000 / transitionTime);
     }
   }
   else if (startFade)
