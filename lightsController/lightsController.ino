@@ -530,7 +530,7 @@ void loop()
   }
 
   //EFFECT CYCLON RAINBOW
-  if (effectString == "cyclonrainbow")
+  if (effectString == "cyclonrainb")
   { //Single Dot Down
     static uint8_t hue = 0;
     //First slide the led in one direction
@@ -722,7 +722,7 @@ void loop()
   }
 
   //EFFECT RAINBOW WITH GLITTER
-  if (effectString == "rainbowwithglitter")
+  if (effectString == "rainblitter")
   { //FastLED's built-in rainbow generator with Glitter
     static uint8_t starthue = 0;
     thishue++;
