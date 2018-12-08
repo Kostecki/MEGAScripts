@@ -19,7 +19,7 @@ os.system('vnstat -i eth1 --json > /tmp/vnStatData.json')
 with open("/tmp/vnStatData.json", "r") as f:
   data = json.load(f)
 
-#Convert data from kibibtyes to kilobytes and set upload and download with data from vnStat 
+#Convert data from kibibtyes to kilobytes and set upload and download
 downloadAmount = data['interfaces'][0]['traffic']['total']['rx'] * 1.02400
 uploadAmount = data['interfaces'][0]['traffic']['total']['tx'] * 1.02400
 
