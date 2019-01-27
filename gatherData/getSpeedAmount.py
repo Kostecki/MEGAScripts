@@ -11,7 +11,7 @@ setStatusData = {}
 setStatusData['AvgSpeed'] = {}
 setStatusData['DataAmount'] = {}
 
-#Get uptime
+#Get uptime in seconds
 uptime = os.popen("awk '{print $1}' /proc/uptime").readline()
 
 #Get data from vnStat
@@ -19,11 +19,11 @@ os.system('vnstat -i eth1 --json > /tmp/vnStatData.json')
 with open("/tmp/vnStatData.json", "r") as f:
   data = json.load(f)
 
-#Convert data to kilobytes and set upload and download with data from vnStat 
+#Convert data from kibibtyes to kilobytes and set upload and download
 downloadAmount = data['interfaces'][0]['traffic']['total']['rx'] * 1.02400
 uploadAmount = data['interfaces'][0]['traffic']['total']['tx'] * 1.02400
 
-#Calculate average download and upload speed
+#Calculate average download and upload speed (kilobytes/sec)
 downloadAvgSpeed = float(downloadAmount) / float(uptime)
 uploadAvgSpeed = float(uploadAmount) / float(uptime)
 
