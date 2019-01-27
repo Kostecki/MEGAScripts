@@ -1,22 +1,20 @@
 /*
   This script is heavily inspired by https://github.com/bruhautomation/ESP-MQTT-JSON-Digital-LEDs
-  And by inspired i mean it's probably 95% his work with slight modifications to fit our needs.
+  And by inspired i mean it's probably 90% his work with slight modifications to fit our needs.
 */
 #define FASTLED_INTERNAL
 #define FASTLED_INTERRUPT_RETRY_COUNT 0
 
 #include <ArduinoJson.h> //Note that 5.13.2 is the last working version. 6.0.0-beta introduces breaking changes.
 #include <ESP8266WiFi.h>
-#include <PubSubClient.h>
+#include <MQTT.h>
 #include "FastLED.h"
 #include <ESP8266mDNS.h>
-#include <WiFiUdp.h>
-#include <ArduinoOTA.h>
-#include <ESP8266httpUpdate.h>
+
+#include "FS.h"
 
 //Config
 #include "config.h"
-#include "certs.h"
 
 //MQTT
 const char* ON_CMD = "ON";
@@ -27,7 +25,6 @@ String oldeffectString = "solid";
 
 //FOR JSON
 const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
-#define MQTT_MAX_PACKET_SIZE 512;
 
 //FastLED Defintions
 #if ENV == 0 or ENV == 1
@@ -54,7 +51,6 @@ bool startFade = false;
 bool onbeforeflash = false;
 unsigned long lastLoop = 0;
 int transitionTime = 0; //Magic value. Who knows what unit..
-int speed = 0;
 bool inFade = false;
 int loopCount = 0;
 int stepR, stepG, stepB;
@@ -134,8 +130,8 @@ bool gReverseDirection = false;
 //BPM
 uint8_t gHue = 0;
 
-WiFiClient espClient;
-PubSubClient client(espClient);
+WiFiClientSecure net;
+MQTTClient client;
 
 struct CRGB leds[NUM_LEDS_PER_STRIP];
 
@@ -143,8 +139,6 @@ struct CRGB leds[NUM_LEDS_PER_STRIP];
 void setup()
 {  
   Serial.begin(115200);
-
-  SPIFFS.begin();
 
   FastLED.addLeds<CHIPSET, D5, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP);
   FastLED.addLeds<CHIPSET, D6, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP);
@@ -160,54 +154,9 @@ void setup()
   //Begin WiFi setup
   setup_wifi();
 
-  setClock(); // Required for X.509 validation
-
-  int numCerts = certStore.initCertStore(&certs_idx, &certs_ar);
-  Serial.printf("Number of CA certs read: %d\n", numCerts);
-  if (numCerts == 0) {
-    Serial.printf("No certs found. Did you run certs-from-mozill.py and upload the SPIFFS directory before running?\n");
-    return; // Can't connect to anything w/o certs!
-  }
-  Serial.println();
-
-  //Post current running fimrware version to api
-  //postFWVersion(); //Post current firmware version back to API OST
-
-  client.setServer(MQTT_SERVER, MQTT_PORT);
-  client.setCallback(callback);
-
-  //OTA SETUP
-  ArduinoOTA.setPort(OTA_PORT);
-  
-  //Hname defaults to esp8266-[ChipID]
-  ArduinoOTA.setHostname(SENSOR_NAME);
-
-  //No authentication by default
-  ArduinoOTA.setPassword((const char *)OTA_PASSWORD);
-
-  ArduinoOTA.onStart([]() {
-    Serial.println("Starting");
-  });
-  ArduinoOTA.onEnd([]() {
-    Serial.println("\nEnd");
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR)
-      Serial.println("Auth Failed");
-    else if (error == OTA_BEGIN_ERROR)
-      Serial.println("Begin Failed");
-    else if (error == OTA_CONNECT_ERROR)
-      Serial.println("Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR)
-      Serial.println("Receive Failed");
-    else if (error == OTA_END_ERROR)
-      Serial.println("End Failed");
-  });
-  ArduinoOTA.begin();
+  //Setup MQTT connection
+  client.begin(MQTT_SERVER, MQTT_PORT, net);
+  client.onMessageAdvanced(callback);
 }
 
 //START SETUP WIFI
@@ -239,7 +188,7 @@ void setup_wifi()
 }
 
 //START CALLBACK
-void callback(char *topic, byte *payload, unsigned int length)
+void callback(MQTTClient *client, char topic[], char payload[], int length)
 {
   Serial.print("Message arrived [");
   Serial.print(topic);
@@ -340,11 +289,6 @@ bool processJson(char *message)
       effectString = EFFECT;
       twinklecounter = 0; //manage twinklecounter
     }
-    
-    if (root.containsKey("Speed"))
-    {
-      speed = root["Speed"];
-    }
 
     if (root.containsKey("Speed"))
     {
@@ -391,11 +335,6 @@ bool processJson(char *message)
       effectString = EFFECT;
       twinklecounter = 0; //manage twinklecounter
     }
-    
-    if (root.containsKey("Speed"))
-    {
-      speed = root["Speed"];
-    }
 
     if (root.containsKey("Speed"))
     {
@@ -411,30 +350,25 @@ bool processJson(char *message)
 }
 
 //START RECONNECT
-void reconnect()
-{
+void reconnect() {
   //Loop until we're reconnected
-  while (!client.connected())
-  {
-    Serial.print("Attempting MQTT connection...");
-    //Attempt to connect
-    if (client.connect(SENSOR_NAME, MQTT_USERNAME, MQTT_PASSWORD))
-    {
-      Serial.println("connected");
-      client.subscribe(MQTT_TOPIC);
-      setColor(0, 0, 0);
-    }
-    else
-    {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      //Wait 5 seconds before retrying
-      delay(5000);
-    }
+  Serial.println("Attempting MQTT connection...");
+  Serial.println("");
 
-    Serial.println();
+  while (!client.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD)) {
+    Serial.println("Error connecting to broker: " + String(MQTT_SERVER) + "Last error: " + client.lastError());
+    delay(1000);
   }
+  Serial.println("Connected to broker: " + String(MQTT_SERVER));
+
+  while (!client.subscribe(MQTT_TOPIC)) {
+    Serial.println("Error connecting to topic: " + String(MQTT_TOPIC) + "Last error: " + client.lastError());
+    delay(1000);
+  }
+  Serial.println("Connected to topic: " + String(MQTT_TOPIC));
+  Serial.println("");
+
+  setColor(0, 0, 0);
 }
 
 //START Set Color
@@ -461,7 +395,6 @@ void setColor(int inR, int inG, int inB)
 //START MAIN LOOP
 void loop()
 {
-
   if (!client.connected())
   {
     reconnect();
@@ -476,8 +409,7 @@ void loop()
   }
 
   client.loop();
-  
-  ArduinoOTA.handle();
+  delay(10);  // <- fixes some issues with WiFi stability
   
   //Check if there's new firmware
   //checkForUpdates();
@@ -1100,7 +1032,6 @@ void addGlitterColor(fract8 chanceOfGlitter, int red, int green, int blue)
 //START SHOW LEDS
 void showleds()
 {
-
   delay(1);
 
   if (stateOn) {
@@ -1131,147 +1062,4 @@ void printEnv() {
   Serial.print("Number of leds per strip: ");
   Serial.println(NUM_LEDS_PER_STRIP);
   Serial.println("Ready");
-}
-
-void postFWVersion() {
-  BearSSL::WiFiClientSecure *bear = new BearSSL::WiFiClientSecure();
-  // Integrate the cert store with this connection
-  bear->setCertStore(&certStore);
-
-  String payload = "firmware=";
-  payload.concat(FW_VERSION);
-
-  Serial.println("Sending current FW version to API");
-  
-  if (!bear->connect(FW_VERSION_URL, 443)) {
-    Serial.println("connection failed");
-    return;
-  }
-
-  bear->println("POST " + FW_VERSION_DIR + "HTTP/1.1");
-  bear->println("Host: " + FW_VERSION_URL);
-  bear->println("User-Agent: ESP8266");
-  bear->println("Content-Type: application/x-www-form-urlencoded");
-  bear->print("Content-Length: ");
-  bear->println(payload.length());
-  bear->println();
-  bear->print(payload);
-
-  while (bear->connected()) {
-    String line = bear->readStringUntil('\n');
-    if (line == "\r") {
-      break;
-    }
-  }
-  String line = bear->readStringUntil('\n');
-  Serial.println(line);
-
-  bear->stop();
-  
-  Serial.println();
-}
-
-// void getFWVersion() {
-//   BearSSL::WiFiClientSecure *bear = new BearSSL::WiFiClientSecure();
-//   // Integrate the cert store with this connection
-//   bear->setCertStore(&certStore);
-
-//   Serial.println("Getting current FW version from API");
-
-//   if (!bear->connect(FW_VERSION_URL, 443)) {
-//     Serial.println("connection failed");
-//     return;
-//   }
-
-//   bear->print(String("GET ") + FW_VERSION_DIR + " HTTP/1.1\r\n" +
-//             "Host: " + FW_VERSION_URL + "\r\n" +
-//             "User-Agent: ESP8266\r\n" +
-//             "Connection: close\r\n\r\n");
-
-//   while (bear->connected()) {
-//     String line = bear->readStringUntil('\n');
-//     if (line == "\r") {
-//       break;
-//     }
-//   }
-//   String line = bear->readStringUntil('\n');
-//   Serial.println(line);
-
-//   bear->stop();
-  
-//   Serial.println();
-
-//   StaticJsonBuffer<BUFFER_SIZE> jsonBuffer;
-//   JsonObject& root = jsonBuffer.parseObject(line);
-
-//   String response = root["response"];
-
-//   return response;
-// }
-
-String macToStr(const uint8_t* mac)
-{
-  String result;
-  for (int i = 0; i < 6; ++i) {
-    result += String(mac[i], 16);
-  }
-  return result;
-}
-
-void checkForUpdates() {
-  String clientMac;
-  unsigned char mac2[6];
-  WiFi.macAddress(mac2);
-  clientMac += macToStr(mac2);
-  
-  String fwURL = String(FW_BASE_URL);
-  fwURL.concat(clientMac);
-  String fwVersionURL = fwURL;
-  fwVersionURL.concat(".version");
-
-  Serial.println("Checking for firmware updates.");
-  Serial.print("MAC address: ");
-  Serial.println(clientMac);
-  Serial.print("Firmware version URL: ");
-  Serial.println(fwVersionURL);
-
-  HTTPClient httpClient;
-  httpClient.begin(fwVersionURL);
-  int httpCode = httpClient.GET();
-  if(httpCode == 200) {
-    String newFWVersion = httpClient.getString();
-
-    Serial.print("Current firmware version: ");
-    Serial.println(FW_VERSION);
-    Serial.print("Available firmware version: ");
-    Serial.println(newFWVersion);
-
-    int newVersion = newFWVersion.toInt();
-
-    if(newVersion > FW_VERSION) {
-      Serial.println("Preparing to update");
-
-      String fwImageURL = fwURL;
-      fwImageURL.concat(".bin");
-      t_httpUpdate_return ret = ESPhttpUpdate.update(fwImageURL);
-
-      switch(ret) {
-        case HTTP_UPDATE_FAILED:
-          Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
-          break;
-
-        case HTTP_UPDATE_NO_UPDATES:
-          Serial.println("HTTP_UPDATE_NO_UPDATES");
-          break;
-      }
-    }
-    else {
-      Serial.println("Already on latest version");
-    }
-  }
-  else {
-    Serial.print("Firmware version check failed, got HTTP response code ");
-    Serial.println(httpCode);
-  }
-  httpClient.end();
 }
