@@ -11,6 +11,9 @@
 #include "FastLED.h"
 #include <ESP8266mDNS.h>
 
+//Config
+#include "config.h";
+
 //MQTT
 const char* ON_CMD = "ON";
 const char* OFF_CMD = "OFF";
@@ -133,10 +136,19 @@ struct CRGB leds[NUM_LEDS_PER_STRIP];
 
 //START SETUP
 void setup()
-{  
+{
+  //Setup serial connection
   Serial.begin(115200);
 
-  SPIFFS.begin();
+  //Print current environment info to serial console
+  printEnv();
+
+  //Begin WiFi setup
+  setup_wifi();
+
+  //Setup MQTT
+  client.setServer(MQTT_SERVER, MQTT_PORT);
+  client.setCallback(callback);
 
   FastLED.addLeds<CHIPSET, D5, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP);
   FastLED.addLeds<CHIPSET, D6, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP);
@@ -145,15 +157,6 @@ void setup()
 
   setupStripedPalette(CRGB::Red, CRGB::Red, CRGB::White, CRGB::White); //for CANDY CANE
   gPal = HeatColors_p;                                                 //for FIRE
-
-  //Print current environment info to serial console
-  printEnv();
-
-  //Begin WiFi setup
-  setup_wifi();
-
-  client.setServer(MQTT_SERVER, MQTT_PORT);
-  client.setCallback(callback);
 }
 
 //START SETUP WIFI
@@ -354,7 +357,7 @@ void reconnect()
   {
     Serial.print("Attempting MQTT connection...");
     //Attempt to connect
-    if (client.connect(SENSOR_NAME, MQTT_USERNAME, MQTT_PASSWORD))
+    if (client.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD))
     {
       Serial.println("connected");
       client.subscribe(MQTT_TOPIC);
@@ -728,7 +731,6 @@ void loop()
 
   EVERY_N_MILLISECONDS(10)
   {
-
     nblendPaletteTowardPalette(currentPalette, targetPalette, maxChanges); //FOR NOISE ANIMATIon
     {
       gHue++;
@@ -1031,7 +1033,6 @@ void addGlitterColor(fract8 chanceOfGlitter, int red, int green, int blue)
 //START SHOW LEDS
 void showleds()
 {
-
   delay(1);
 
   if (stateOn) {
