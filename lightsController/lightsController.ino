@@ -134,6 +134,8 @@ bool shitsbroken = false;
 bool firstRun = true;
 int timesToRetry = 10;
 String fallbackEffectString = "rainbow";
+unsigned long theTime;
+int minutesBetweenRetries = 5;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -187,6 +189,9 @@ void setup_wifi()
       Serial.println("Couldn't connect to WiFi. Triggering fallback");
       Serial.println("");
       shitsbroken = true;
+      retryCount = 0;
+      firstRun = true;
+      theTime = millis();
       break;
     }
     delay(500);
@@ -380,6 +385,10 @@ void reconnect()
       Serial.println("Couldn't connect to broker. Triggering fallback");
       Serial.println("");
       shitsbroken = true;
+      retryCount = 0;
+      firstRun = true;
+      theTime = millis();
+
       break;
     }
     Serial.print("Attempting MQTT connection...");
@@ -427,12 +436,14 @@ void setColor(int inR, int inG, int inB)
 //START MAIN LOOP
 void loop()
 {
-  if (!shitsbroken) {
-    if (!client.connected())
-    {
-      reconnect();
-    }
+  // Check if connection is back every 5 minutes
+  unsigned long currentTime = millis();
+  unsigned long timeDifference = currentTime - theTime;
+  if (timeDifference > (minutesBetweenRetries * 60000)) { //convert minutes in miliseconds
+    shitsbroken = false;
+  }
 
+  if (!shitsbroken) {
     if (WiFi.status() != WL_CONNECTED)
     {
       delay(1);
@@ -441,19 +452,18 @@ void loop()
       return;
     }
 
+    if (!client.connected())
+    {
+      reconnect();
+    }
+
     client.loop();
   } else {
     if (firstRun) {
-      for(size_t i = 0; i < 2; i++)
-      {
-        setColor(255, 0, 0);
-        delay(800);
-        setColor(0, 0, 0);
-        delay(800);
-      }
+      theTime = millis();
       firstRun = false;
-      
       effectString = fallbackEffectString;
+      brightness = 128;
     }
   }
 
