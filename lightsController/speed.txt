@@ -1,0 +1,8 @@
+confetti
+cyclonrainbow
+dots
+glitter
+juggle
+policeall
+policeone
+ripple
