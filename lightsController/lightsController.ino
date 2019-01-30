@@ -129,6 +129,12 @@ bool gReverseDirection = false;
 //BPM
 uint8_t gHue = 0;
 
+//Fallback config
+bool shitsbroken = false;
+bool firstRun = true;
+int timesToRetry = 10;
+String fallbackEffectString = "rainbow";
+
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -171,20 +177,32 @@ void setup_wifi()
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
+  int retryCount = 0;
+
   while (WiFi.status() != WL_CONNECTED)
   {
+    retryCount++;
+    if (retryCount > timesToRetry * 2) {
+      Serial.println("");
+      Serial.println("Couldn't connect to WiFi. Triggering fallback");
+      Serial.println("");
+      shitsbroken = true;
+      break;
+    }
     delay(500);
     Serial.print(".");
   }
 
-  WiFi.setSleepMode(WIFI_NONE_SLEEP);
+  if (!shitsbroken) {
+    WiFi.setSleepMode(WIFI_NONE_SLEEP);
   
-  Serial.println();
-  Serial.print("Connected to SSID: ");
-  Serial.println(WiFi.SSID());
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-  Serial.println();
+    Serial.println();
+    Serial.print("Connected to SSID: ");
+    Serial.println(WiFi.SSID());
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+    Serial.println();
+  }
 }
 
 //START CALLBACK
@@ -352,9 +370,18 @@ bool processJson(char *message)
 //START RECONNECT
 void reconnect()
 {
+  int retryCount = 0;
   //Loop until we're reconnected
   while (!client.connected())
   {
+    retryCount++;
+    if (retryCount > timesToRetry ) {
+      Serial.println("");
+      Serial.println("Couldn't connect to broker. Triggering fallback");
+      Serial.println("");
+      shitsbroken = true;
+      break;
+    }
     Serial.print("Attempting MQTT connection...");
     //Attempt to connect
     if (client.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD))
@@ -400,21 +427,35 @@ void setColor(int inR, int inG, int inB)
 //START MAIN LOOP
 void loop()
 {
+  if (!shitsbroken) {
+    if (!client.connected())
+    {
+      reconnect();
+    }
 
-  if (!client.connected())
-  {
-    reconnect();
+    if (WiFi.status() != WL_CONNECTED)
+    {
+      delay(1);
+      Serial.print("WIFI Disconnected. Attempting reconnection.");
+      setup_wifi();
+      return;
+    }
+
+    client.loop();
+  } else {
+    if (firstRun) {
+      for(size_t i = 0; i < 2; i++)
+      {
+        setColor(255, 0, 0);
+        delay(800);
+        setColor(0, 0, 0);
+        delay(800);
+      }
+      firstRun = false;
+      
+      effectString = fallbackEffectString;
+    }
   }
-
-  if (WiFi.status() != WL_CONNECTED)
-  {
-    delay(1);
-    Serial.print("WIFI Disconnected. Attempting reconnection.");
-    setup_wifi();
-    return;
-  }
-
-  client.loop();
 
   //EFFECT BPM
   if (effectString == "bpm")
@@ -830,28 +871,13 @@ void loop()
     }
   }
 
-  if (startFade && effectString == "solid")
+  if (effectString == "solid")
   {
-    //If we don't want to fade, skip it.
-    if (transitionTime == 0)
-    {
-      setColor(realRed, realGreen, realBlue);
+    setColor(realRed, realGreen, realBlue);
 
-      redVal = realRed;
-      grnVal = realGreen;
-      bluVal = realBlue;
-
-      startFade = false;
-    }
-    else
-    {
-      loopCount = 0;
-      stepR = calculateStep(redVal, realRed);
-      stepG = calculateStep(grnVal, realGreen);
-      stepB = calculateStep(bluVal, realBlue);
-
-      inFade = true;
-    }
+    redVal = realRed;
+    grnVal = realGreen;
+    bluVal = realBlue;
   }
 
   if (inFade)
