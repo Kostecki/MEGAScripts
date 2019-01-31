@@ -130,11 +130,12 @@ uint8_t gHue = 0;
 
 //Fallback config
 bool shitsbroken = false;
-bool firstRun = true;
+bool isInitialRun = true;
+bool isRetryRun = false;
 int timesToRetry = 10;
 String fallbackEffectString = "rainbow";
 unsigned long theTime;
-int minutesBetweenRetries = 5;
+int minutesBetweenRetries = 1;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -184,13 +185,8 @@ void setup_wifi()
   {
     retryCount++;
     if (retryCount > timesToRetry * 2) {
-      Serial.println("");
-      Serial.println("Couldn't connect to WiFi. Triggering fallback");
-      Serial.println("");
-      shitsbroken = true;
       retryCount = 0;
-      firstRun = true;
-      theTime = millis();
+      triggerFallback("WiFi");
       break;
     }
     delay(500);
@@ -207,6 +203,15 @@ void setup_wifi()
     Serial.println(WiFi.localIP());
     Serial.println();
   }
+}
+
+void triggerFallback(String sender) {
+  Serial.println();
+  Serial.println("Couldn't connect to " + sender + ". Triggering fallback");
+  Serial.println();
+  isRetryRun = true;
+  shitsbroken = true;
+  theTime = millis();
 }
 
 //START CALLBACK
@@ -380,14 +385,8 @@ void reconnect()
   {
     retryCount++;
     if (retryCount > timesToRetry ) {
-      Serial.println("");
-      Serial.println("Couldn't connect to broker. Triggering fallback");
-      Serial.println("");
-      shitsbroken = true;
       retryCount = 0;
-      firstRun = true;
-      theTime = millis();
-
+      triggerFallback("broker");
       break;
     }
     Serial.print("Attempting MQTT connection...");
@@ -438,6 +437,7 @@ void loop()
   // Check if connection is back every 5 minutes
   unsigned long currentTime = millis();
   unsigned long timeDifference = currentTime - theTime;
+  Serial.println(timeDifference);
   if (timeDifference > (minutesBetweenRetries * 60000)) { //convert minutes in miliseconds
     shitsbroken = false;
   }
@@ -458,9 +458,21 @@ void loop()
 
     client.loop();
   } else {
-    if (firstRun) {
+    if (isInitialRun) {
+      Serial.println("isInitialRun");
+      isInitialRun = false;
+      for(int i = 0; i < 2; i++)
+      {
+        setColor(255, 0, 0);
+        delay(800);
+        setColor(0, 0, 0);
+        delay(800);
+      }
+    }
+    if (isRetryRun) {
+      Serial.println("isRetryRun");
       theTime = millis();
-      firstRun = false;
+      isRetryRun = false;
       effectString = fallbackEffectString;
       brightness = 128;
     }
