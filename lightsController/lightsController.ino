@@ -437,7 +437,6 @@ void loop()
   // Check if connection is back every 5 minutes
   unsigned long currentTime = millis();
   unsigned long timeDifference = currentTime - theTime;
-  Serial.println(timeDifference);
   if (timeDifference > (minutesBetweenRetries * 60000)) { //convert minutes in miliseconds
     shitsbroken = false;
   }
@@ -525,37 +524,6 @@ void loop()
       transitionTime = 30;
     }
     showleds();
-  }
-
-  //EFFECT CYCLON RAINBOW
-  if (effectString == "cyclonrainbow")
-  { //Single Dot Down
-    static uint8_t hue = 0;
-    //First slide the led in one direction
-    for (int i = 0; i < NUM_LEDS_PER_STRIP; i++)
-    {
-      //Set the i'th led to red
-      leds[i] = CHSV(hue++, 255, 255);
-      //Show the leds
-      showleds();
-      //now that we've shown the leds, reset the i'th led to black
-      //leds[i] = CRGB::Black;
-      fadeall();
-      //Wait a little bit before we loop around and do it again
-      delay(10);
-    }
-    for (int i = (NUM_LEDS_PER_STRIP)-1; i >= 0; i--)
-    {
-      //Set the i'th led to red
-      leds[i] = CHSV(hue++, 255, 255);
-      //Show the leds
-      showleds();
-      //now that we've shown the leds, reset the i'th led to black
-      //leds[i] = CRGB::Black;
-      fadeall();
-      //Wait a little bit before we loop around and do it again
-      delay(10);
-    }
   }
 
   //EFFECT DOTS
