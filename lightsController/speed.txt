@@ -1,8 +1,7 @@
-confetti
-cyclonrainbow
-dots
-glitter
-juggle
-policeall
-policeone
-ripple
+Animations with speed control capabilities:
+  -confetti
+  -glitter
+  -policeall
+  -policeone
+  -rainbowwithglitter
+  -ripple
