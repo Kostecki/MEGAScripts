@@ -4,6 +4,7 @@ lightsController/.vscode
 lightsController/build
 
 auth.json
+firebaseServiceAccountKey.json
 
 ### macOS ###
 # General
