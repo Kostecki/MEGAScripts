@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "0e468e230e8725a97e41a1755e1a9dd544a382ad6a58742c1212ea0fccc0cf79"
+            "sha256": "99710c4a0e8d85cab314f145881353374dec057107194e880ca9b6114d210687"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -26,7 +26,7 @@
                 "sha256:058021475c51d8fad6ce8417d69ca5aea71dec9d9e5292e6b83b6cc8b338dcd3",
                 "sha256:2076c114e3ca938ef5de13c608f2b28c517ca3d53407432fd470118556ab3feb"
             ],
-            "index": "pypi",
+            "index": "piwheels",
             "version": "==1.0.2"
         },
         "adafruit-gpio": {
