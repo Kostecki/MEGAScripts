@@ -3,6 +3,11 @@ name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
 
+[[source]]
+url = "https://www.piwheels.org/simole"
+name = "piwheels"
+verify_ssl = true
+
 [dev-packages]
 
 [packages]
@@ -10,4 +15,4 @@ firebase-admin = "*"
 adafruit-ads1x15 = "*"
 
 [requires]
-python_version = "3"
+python_version = "3.5"

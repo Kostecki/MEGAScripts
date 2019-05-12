@@ -1,16 +1,21 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "268eea49db83558d5c9fb7c77fd2db6cfd708ee92fbd3b2a5a8bcd5706a0511e"
+            "sha256": "0e468e230e8725a97e41a1755e1a9dd544a382ad6a58742c1212ea0fccc0cf79"
         },
         "pipfile-spec": 6,
         "requires": {
-            "python_version": "3"
+            "python_version": "3.5"
         },
         "sources": [
             {
                 "name": "pypi",
                 "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            },
+            {
+                "name": "piwheels",
+                "url": "https://www.piwheels.org/simole",
                 "verify_ssl": true
             }
         ]
