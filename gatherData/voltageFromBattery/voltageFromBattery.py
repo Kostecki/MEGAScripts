@@ -12,6 +12,7 @@ firebase_admin.initialize_app(cred, {
 # Truncate to 2 decimals - no rounding
 def truncate(f):
     return math.floor(f * 10 ** 2) / 10 ** 2
+    # TODO: 0-padding
 
 #Get data from ADC Port 0 (connected to voltage divider)
 adc = Adafruit_ADS1x15.ADS1115()

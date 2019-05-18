@@ -1,21 +1,16 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c2529bf8141512e2241ad2361188d4c25d772545cf804326eb10896a69b4216e"
+            "sha256": "a63262738c6d3d9b095234d73103f363ed1f0c1115d8f5e2289dc71056a1c822"
         },
         "pipfile-spec": 6,
         "requires": {
-            "python_version": "3.5"
+            "python_version": "3.7"
         },
         "sources": [
             {
                 "name": "pypi",
                 "url": "https://pypi.org/simple",
-                "verify_ssl": true
-            },
-            {
-                "name": "piwheels",
-                "url": "https://www.piwheels.org/simple",
                 "verify_ssl": true
             }
         ]
@@ -24,29 +19,25 @@
         "adafruit-ads1x15": {
             "hashes": [
                 "sha256:058021475c51d8fad6ce8417d69ca5aea71dec9d9e5292e6b83b6cc8b338dcd3",
-                "sha256:2076c114e3ca938ef5de13c608f2b28c517ca3d53407432fd470118556ab3feb",
-                "sha256:938007346f69a7c9f7f3f85ca3f385377ed994a248416bc74e05f89c69b94378"
+                "sha256:2076c114e3ca938ef5de13c608f2b28c517ca3d53407432fd470118556ab3feb"
             ],
             "index": "pypi",
             "version": "==1.0.2"
         },
         "adafruit-gpio": {
             "hashes": [
-                "sha256:036133fe17e3208c48e8e7c7d797d840256f18d2e6c6ed87b175aafcfbdf0a3a",
                 "sha256:d6465b92c866c51ca8f3bc1e8f2ec36f5ccdb46d0fd54101c1109756d4a2dcd0"
             ],
             "version": "==1.0.3"
         },
         "adafruit-pureio": {
             "hashes": [
-                "sha256:89ff5a0da2cfa6643978929c44743c432680141823e783d6001eb3aab368cc20",
                 "sha256:e65cd929f1d8e109513ed1e457c2742bf4f15349c1a9b7f5b1e04191624d7488"
             ],
             "version": "==0.2.3"
         },
         "cachecontrol": {
             "hashes": [
-                "sha256:24431f42a7c28e4c6af1a2c2ac1046fb80c251af963f80d05950c77d86924ada",
                 "sha256:cef77effdf51b43178f6a2d3b787e3734f98ade253fa3187f3bb7315aaa42ff7"
             ],
             "version": "==0.12.5"
@@ -178,14 +169,12 @@
         },
         "msgpack": {
             "hashes": [
-                "sha256:1d1cfb8b2fc0ed6d1df88c47cdb7b0cf483b65b02f896fab96bf3bc312967e5a",
                 "sha256:26cb40116111c232bc235ce131cc3b4e76549088cb154e66a2eb8ff6fcc907ec",
                 "sha256:300fd3f2c664a3bf473d6a952f843b4a71454f4c592ed7e74a36b205c1782d28",
                 "sha256:3129c355342853007de4a2a86e75eab966119733eb15748819b6554363d4e85c",
                 "sha256:31f6d645ee5a97d59d3263fab9e6be76f69fa131cddc0d94091a3c8aca30d67a",
                 "sha256:3ce7ef7ee2546c3903ca8c934d09250531b80c6127e6478781ae31ed835aac4c",
                 "sha256:4008c72f5ef2b7936447dcb83db41d97e9791c83221be13d5e19db0796df1972",
-                "sha256:402c257349a5d070a337aab3fb2d6e5880203de2855210d55d46946a95ee2ff3",
                 "sha256:62bd8e43d204580308d477a157b78d3fee2fb4c15d32578108dc5d89866036c8",
                 "sha256:70cebfe08fb32f83051971264466eadf183101e335d8107b80002e632f425511",
                 "sha256:72cb7cf85e9df5251abd7b61a1af1fb77add15f40fa7328e924a9c0b6bc7a533",
