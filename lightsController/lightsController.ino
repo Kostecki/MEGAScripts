@@ -28,7 +28,7 @@ const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 #if ENV == 0 or ENV == 1
     const int NUM_LEDS_PER_STRIP = 30; //Development
 #else
-    const int NUM_LEDS_PER_STRIP = 38; //Production
+    const int NUM_LEDS_PER_STRIP = 33; //Production
 #endif
 
 #define CHIPSET WS2813
