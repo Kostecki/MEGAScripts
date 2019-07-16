@@ -7,9 +7,10 @@
 
 #include <ArduinoJson.h> //Note that 5.13.2 is the last working version. 6.0.0-beta introduces breaking changes.
 #include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
 #include <PubSubClient.h>
 #include "FastLED.h"
-#include <ESP8266mDNS.h>
+#include <ArduinoOTA.h>
 
 //Config
 #include "config.h";
@@ -154,6 +155,9 @@ void setup()
   //Begin WiFi setup
   setup_wifi();
 
+  //Setup OTA Update
+  setup_ota();
+
   //Setup MQTT
   client.setServer(MQTT_SERVER, MQTT_PORT);
   client.setCallback(callback);
@@ -203,6 +207,45 @@ void setup_wifi()
     Serial.println(WiFi.localIP());
     Serial.println();
   }
+}
+
+void setup_ota()
+{
+  // Port defaults to 8266
+  ArduinoOTA.setPort(OTA_PORT);
+
+  // Hostname defaults to esp8266-[ChipID]
+  ArduinoOTA.setHostname(HOSTNAME);
+
+  // No authentication by default
+  ArduinoOTA.setPassword(OTA_PASSWORD);
+
+  ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH)
+      type = "sketch";
+    else // U_SPIFFS
+      type = "filesystem";
+
+    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    Serial.println("Start updating " + type);
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+  ArduinoOTA.begin();
+  Serial.println("OTA Ready");
 }
 
 void triggerFallback(String sender) {
@@ -434,6 +477,8 @@ void setColor(int inR, int inG, int inB)
 //START MAIN LOOP
 void loop()
 {
+  ArduinoOTA.handle();
+
   // Check if connection is back every 5 minutes
   unsigned long currentTime = millis();
   unsigned long timeDifference = currentTime - theTime;
