@@ -330,9 +330,9 @@ bool processJson(char *message)
 
     oldeffectString = effectString;
 
-    if (root.containsKey("Brightness"))
+    if (root.containsKey("brightness"))
     {
-      float f = root["Brightness"];
+      float f = root["brightness"];
       byte convertedBrightness = floor(f >= 1.0 ? 255 : f * 256.0);
       flashBrightness = convertedBrightness;
     }
@@ -341,11 +341,11 @@ bool processJson(char *message)
       flashBrightness = brightness;
     }
 
-    if (root.containsKey("Color"))
+    if (root.containsKey("color"))
     {
-      flashRed = root["Color"]["R"];
-      flashGreen = root["Color"]["G"];
-      flashBlue = root["Color"]["B"];
+      flashRed = root["color"]["r"];
+      flashGreen = root["color"]["g"];
+      flashBlue = root["color"]["b"];
     }
     else
     {
@@ -361,9 +361,9 @@ bool processJson(char *message)
       twinklecounter = 0; //manage twinklecounter
     }
 
-    if (root.containsKey("Speed"))
+    if (root.containsKey("speed"))
     {
-      transitionTime = root["Speed"];
+      transitionTime = root["speed"];
     }
     else if (effectString == "solid")
     {
@@ -386,30 +386,30 @@ bool processJson(char *message)
       onbeforeflash = true;
     }
 
-    if (root.containsKey("Color"))
+    if (root.containsKey("color"))
     {
-      red = root["Color"]["R"];
-      green = root["Color"]["G"];
-      blue = root["Color"]["B"];
+      red = root["color"]["b"];
+      green = root["color"]["g"];
+      blue = root["color"]["b"];
     }
 
-    if (root.containsKey("Brightness"))
+    if (root.containsKey("brightness"))
     {
-      float f = root["Brightness"];
+      float f = root["brightness"];
       byte convertedBrightness = floor(f >= 1.0 ? 255 : f * 256.0);
       brightness = convertedBrightness;
     }
 
-    if (root.containsKey("Animation"))
+    if (root.containsKey("animation"))
     {
-      EFFECT = root["Animation"];
+      EFFECT = root["animation"];
       effectString = EFFECT;
       twinklecounter = 0; //manage twinklecounter
     }
 
-    if (root.containsKey("Speed"))
+    if (root.containsKey("speed"))
     {
-      transitionTime = root["Speed"];
+      transitionTime = root["speed"];
     }
     else if (effectString == "solid")
     {
